@@ -12,6 +12,7 @@ int curr_encoder[NUM_SLIDERS] = {512,512,512,512,512};
 int prev_encoder[NUM_SLIDERS] = {512,512,512,512,512};
 int volume[NUM_SLIDERS];
 bool mute[NUM_SLIDERS] = {false, false, false, false, false};
+bool mutepressed[NUM_SLIDERS] = {false, false, false, false, false};
 
 //Set the encoders pins
 
@@ -31,11 +32,11 @@ const int Music_button = 20;
 
 // volume steps
 
-const int increment[NUM_SLIDERS] = {4,4,2,1,4};
+const int increment[NUM_SLIDERS] = {1,4,4,1,4};
 
 // starting volume
 
-int startingVolume[NUM_SLIDERS] = {90,80,20,20,20};
+int startingVolume[NUM_SLIDERS] = {75,80,40,5,20};
 
 // dont touch, other variables
 
@@ -47,7 +48,7 @@ const int buttons_pins[NUM_SLIDERS] = {Master_button, Discord_button, Chrome_but
 
 
 void setup() {
-  // put your setup code here, to run once:
+  // put your setup code here, to run once:
 
 Serial.begin(9600);
 
@@ -79,7 +80,7 @@ pixels.clear();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // put your main code here, to run repeatedly:
 
 curr_encoder[0] = knobMaster.read();
 curr_encoder[1] = knobDiscord.read();
@@ -96,9 +97,9 @@ for (int i = 0; i < NUM_SLIDERS; i++) {
 volume[i] = CheckEncoders(i);
 //check if volume is within boundaries
 if (volume[i] >= max_volume) {
-  volume[i] = max_volume;
+  volume[i] = max_volume;
 } else if (volume[i] <= min_volume) {
-  volume[i] = min_volume;
+  volume[i] = min_volume;
 }
 
 // Check if mute buttons are pressed
@@ -111,16 +112,16 @@ CheckButtons(i);
 String builtString = String("");
 
 for (int i = 0; i < NUM_SLIDERS; i++) {
-  String actualvolume = String(volume[i]);
-  if (mute[i] == true) {
-    actualvolume = String(0);
-  }
-  builtString = builtString + String(actualvolume);
-  if (i < NUM_SLIDERS - 1) {
-    builtString += String("|");
-  }
-  actualvolume = "0";
-  
+  String actualvolume = String(volume[i]);
+  if (mute[i] == true) {
+    actualvolume = String(0);
+  }
+  builtString = builtString + String(actualvolume);
+  if (i < NUM_SLIDERS - 1) {
+    builtString += String("|");
+  }
+  actualvolume = "0";
+  
 }
 
 Serial.println(builtString);
@@ -130,27 +131,35 @@ Serial.println(builtString);
 }
 
 int CheckEncoders(int knob_index) {
-  if (curr_encoder[knob_index] > prev_encoder[knob_index]) {
-    prev_encoder[knob_index] = curr_encoder[knob_index];
-    return volume[knob_index] + increment[knob_index];
-  }
-  else if (curr_encoder[knob_index] < prev_encoder[knob_index]) {
-    prev_encoder[knob_index] = curr_encoder[knob_index];
-    return volume[knob_index] - increment[knob_index];
-  } else {
-    return volume[knob_index];
-  }
-  
+  if (curr_encoder[knob_index] > prev_encoder[knob_index]) {
+    prev_encoder[knob_index] = curr_encoder[knob_index];
+    return volume[knob_index] + increment[knob_index];
+  }
+  else if (curr_encoder[knob_index] < prev_encoder[knob_index]) {
+    prev_encoder[knob_index] = curr_encoder[knob_index];
+    return volume[knob_index] - increment[knob_index];
+  } else {
+    return volume[knob_index];
+  }
+  
 }
 
 void CheckButtons(int knob_index) {
-  if (digitalRead(buttons_pins[knob_index]) == LOW && mute[knob_index] == false) {
-    mute[knob_index] = true;
-    delay(100);
-  }
-  else if (digitalRead(buttons_pins[knob_index]) == LOW && mute[knob_index] == true) {
-    mute[knob_index] = false;
-    delay(100);
-  }
+  if (mutepressed[knob_index] == false){
+    if (digitalRead(buttons_pins[knob_index]) == LOW && mute[knob_index] == false) {
+      mute[knob_index] = true;
+      delay(50);
+      mutepressed[knob_index] = true;
+    }
+    else if (digitalRead(buttons_pins[knob_index]) == LOW && mute[knob_index] == true) {
+      mute[knob_index] = false;
+      delay(50);
+      mutepressed[knob_index] = true;
+    }
+  }
+  if (digitalRead(buttons_pins[knob_index]) == HIGH && mutepressed[knob_index] == true) {
+    mutepressed[knob_index] = false;
+  }
 }
+
 
